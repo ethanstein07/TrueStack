@@ -1,0 +1,550 @@
+<title>TrueStack App v2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: presenter stage. Guide column + two live phones (host and a player) sharing one game. Narrow screens show one phone at a time. */
+:root{
+  --bg:#e9ecf0; --panel:#ffffff; --ink:#15171d; --muted:#5a6070; --line:#d6dae2; --accent:#0c7a66; --accent-soft:#d9efe9;
+  --a-bg:#f5f6f8; --a-card:#ffffff; --a-ink:#15171d; --a-muted:#6b7180; --a-line:#e3e6ec; --a-accent:#0c7a66; --a-accent-soft:#d9efe9; --a-dark:#15171d; --a-mint:#3ccfab; --a-red:#c8343d; --a-amber:#b7791f; --a-amber-soft:#fbf0dc;
+  --case:#3b1f4a; --case-2:#22122c; --brass:#c9a54a; --c1:#f2f3f5; --c5:#d8343f; --c10:#2f6fd6; --c25:#1f9a5f; --c100:#1e2027;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0d0f13;--panel:#161920;--ink:#eceef3;--muted:#9aa1b1;--line:#262a34;--accent:#3ccfab;--accent-soft:#12322b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d0f13;--panel:#161920;--ink:#eceef3;--muted:#9aa1b1;--line:#262a34;--accent:#3ccfab;--accent-soft:#12322b;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.stage{max-width:1280px;margin:0 auto;padding-block:36px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:minmax(0,1fr) auto;gap:44px;align-items:start}
+.guide{display:grid;gap:20px;min-width:0}
+.brand{display:flex;align-items:center;gap:10px;font:800 22px/1 var(--display);letter-spacing:-.02em}
+.mark{display:flex;flex-direction:column;gap:2px}.mark i{display:block;width:22px;height:5px;border-radius:3px}
+.guide h1{font:800 clamp(30px,3.4vw,42px)/1.04 var(--display);letter-spacing:-.03em;margin:0;text-wrap:balance}
+.guide p{margin:0;color:var(--muted);max-width:56ch}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.walk{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.walk button{width:100%;text-align:left;display:grid;grid-template-columns:26px 1fr;gap:8px;padding:9px 12px;border-radius:12px;border:1px solid transparent;background:transparent}
+.walk button:hover{background:var(--panel)}
+.walk button.on{background:var(--panel);border-color:var(--line)}
+.walk .n{font:500 12px/1.9 var(--mono);color:var(--muted)}
+.walk b{display:block;font-weight:600;font-size:15px}
+.walk span.d{display:block;color:var(--muted);font-size:13.5px;line-height:1.4}
+.money{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:10px}
+.money h3{margin:0;font:700 17px/1.2 var(--display)}
+.money ol{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px;display:grid;gap:6px}
+.money ol b{color:var(--ink);font-weight:600}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ghost{border:1px solid var(--line);background:transparent;border-radius:999px;padding:9px 14px;font-size:14px;font-weight:600}
+.ghost:hover{border-color:var(--ink)}
+.note{font:500 12px/1.5 var(--mono);color:var(--muted)}
+
+.phones{display:grid;grid-template-columns:auto auto;gap:24px}
+.ph{display:grid;gap:10px;justify-items:center}
+.ph-label{font:500 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ph-label b{color:var(--ink);font-weight:500}
+.switch{display:none;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px;gap:4px;justify-self:center}
+.switch button{border:0;background:transparent;border-radius:999px;padding:9px 16px;font-weight:600;font-size:14px;color:var(--muted)}
+.switch button.on{background:var(--ink);color:var(--bg)}
+.switch .badge{display:inline-block;min-width:18px;height:18px;border-radius:9px;background:var(--a-red);color:#fff;font-size:11px;line-height:18px;margin-left:6px;padding:0 5px}
+
+.phone{width:372px;height:780px;max-width:100%;background:#050608;border-radius:54px;padding:11px;box-shadow:0 50px 80px -40px rgba(10,12,20,.55),inset 0 0 0 2px #2c303a}
+.app{position:relative;height:100%;border-radius:43px;overflow:hidden;background:var(--a-bg);color:var(--a-ink);display:flex;flex-direction:column;font-size:15px}
+.sbar{height:48px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 28px 0 32px;font:600 15px/1 var(--body);position:relative}
+.island{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:112px;height:32px;background:#000;border-radius:20px}
+.sicons{display:flex;gap:6px}.sicons i{display:block;background:var(--a-ink);border-radius:2px}
+.scroll{flex:1;overflow-y:auto;padding:6px 16px 18px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.tabs{flex:none;display:grid;grid-template-columns:repeat(2,1fr);border-top:1px solid var(--a-line);background:rgba(255,255,255,.94);padding:8px 10px 24px}
+.tabs button{border:0;background:none;display:grid;justify-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--a-muted);padding:4px}
+.tabs button.on{color:var(--a-accent)}
+.tabs svg{width:23px;height:23px}
+
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:38px}
+.top h2,.h2{font:800 26px/1.05 var(--display);letter-spacing:-.02em;margin:0}
+.back{border:0;background:none;color:var(--a-accent);font-weight:600;padding:6px 0;display:flex;align-items:center;gap:3px}
+.pill{font:500 10.5px/1 var(--mono);color:var(--a-accent);background:var(--a-accent-soft);padding:6px 9px;border-radius:999px;white-space:nowrap}
+.pill.live{background:var(--a-dark);color:var(--a-mint)}
+.pill.amber{background:var(--a-amber-soft);color:var(--a-amber)}
+.pill.grey{background:#eceef2;color:var(--a-muted)}
+.card{background:var(--a-card);border:1px solid var(--a-line);border-radius:18px;padding:14px}
+.dark{background:var(--a-dark);color:#fff;border-radius:20px;padding:16px}
+.lbl{font:500 10.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--a-muted)}
+.dark .lbl{color:#9aa1b1}
+.big{font:800 34px/1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.cta{border:0;width:100%;background:var(--a-accent);color:#fff;font-weight:700;padding:14px;border-radius:999px;font-size:16px}
+.cta.dk{background:var(--a-dark)}
+.cta.ol{background:#fff;color:var(--a-ink);border:1.5px solid var(--a-line)}
+.cta:disabled{opacity:.4;cursor:default}
+.list{display:grid}
+.li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--a-line)}
+.li:first-child{border-top:0}
+.li small{display:block;color:var(--a-muted);font-size:12.5px}
+.av{width:32px;height:32px;flex:none;border-radius:50%;display:grid;place-items:center;font:700 12.5px/1 var(--body);color:#fff}
+.who{display:flex;align-items:center;gap:10px;min-width:0}
+.tag{font:500 9.5px/1 var(--mono);background:var(--a-dark);color:#fff;padding:3px 5px;border-radius:4px;margin-left:5px;vertical-align:2px}
+.tag.me{background:var(--a-accent)}
+.mini{border:0;background:var(--a-accent-soft);color:var(--a-accent);font-weight:700;font-size:13px;padding:8px 12px;border-radius:999px;white-space:nowrap}
+.mini.dk{background:var(--a-dark);color:#fff}
+.num{font-variant-numeric:tabular-nums;font-weight:600}
+.pos{color:var(--a-accent)}.neg{color:var(--a-red)}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.seg button{border:1.5px solid var(--a-line);background:#fff;border-radius:12px;padding:11px 0;font-weight:700;font-variant-numeric:tabular-nums}
+.seg button.on{border-color:var(--a-accent);background:var(--a-accent-soft);color:var(--a-accent)}
+.chipdot{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600}
+.dot{width:22px;height:22px;flex:none;border-radius:50%;background:var(--t);box-shadow:inset 0 0 0 3px rgba(255,255,255,.5),inset 0 0 0 1px rgba(0,0,0,.18)}
+.chips{display:flex;gap:12px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:8px}
+.step button{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--a-line);background:#fff;font-weight:700;line-height:1}
+.step span{min-width:22px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700}
+.stackin{width:76px;text-align:right;font:inherit;font-weight:600;font-variant-numeric:tabular-nums;padding:7px 9px;border:1.5px solid var(--a-line);border-radius:10px;background:#fff;color:var(--a-ink)}
+.check{padding:10px 12px;border-radius:12px;font-weight:600;font-size:14px}
+.check.ok{background:var(--a-accent-soft);color:var(--a-accent)}
+.check.bad{background:#fbe4e5;color:var(--a-red)}
+.alert{background:var(--a-amber-soft);border:1px solid #f0d9ab;border-radius:18px;padding:14px;display:grid;gap:10px}
+.alert b{font-size:15px}
+.fine{font-size:12.5px;color:var(--a-muted);margin:0}
+.input{font:inherit;font-size:22px;letter-spacing:.3em;text-align:center;text-transform:uppercase;padding:12px;border:1.5px solid var(--a-line);border-radius:14px;background:#fff;width:100%;font-family:var(--mono);color:var(--a-ink)}
+
+.tap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:6px 0}
+.ring{width:140px;height:140px;border-radius:50%;display:grid;place-items:center;position:relative;background:var(--a-accent-soft)}
+.ring::before,.ring::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--a-accent);animation:pulse 2s ease-out infinite;opacity:0}
+.ring::after{animation-delay:1s}
+@keyframes pulse{0%{transform:scale(.8);opacity:.7}100%{transform:scale(1.35);opacity:0}}
+.ring svg{width:52px;height:52px;color:var(--a-accent)}
+.ring.ok{background:var(--a-accent)}.ring.ok::before,.ring.ok::after{display:none}.ring.ok svg{color:#fff}
+.amount{font:800 50px/1 var(--display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+
+.sheet{position:absolute;inset:0;background:rgba(10,12,18,.45);display:flex;align-items:flex-end;z-index:5}
+.sheet-in{background:#fff;width:100%;border-radius:26px 26px 0 0;padding:18px 18px 30px;display:grid;gap:12px;animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+.sheet-in .pay-row{display:flex;justify-content:space-between;font-size:14.5px;padding:8px 0;border-top:1px solid var(--a-line)}
+.applepay{background:#000;color:#fff;border:0;border-radius:12px;padding:14px;font-weight:700;font-size:16px;width:100%}
+.grab{width:38px;height:5px;border-radius:3px;background:#d5d8de;justify-self:center}
+
+.toast{position:absolute;left:16px;right:16px;top:56px;background:var(--a-dark);color:#fff;padding:12px 14px;border-radius:16px;font-weight:600;font-size:14px;opacity:0;transform:translateY(-8px);transition:.25s;pointer-events:none;z-index:6;display:flex;gap:10px;align-items:center}
+.toast::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--a-mint);flex:none}
+.toast.show{opacity:1;transform:none}
+
+.tray{background:linear-gradient(160deg,var(--case),var(--case-2));border-radius:16px;padding:12px 10px 10px;border:2px solid var(--brass);display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.col{display:grid;gap:5px;justify-items:center}
+.well{width:100%;height:96px;border-radius:9px;background:rgba(0,0,0,.35);box-shadow:inset 0 2px 6px rgba(0,0,0,.5);display:flex;flex-direction:column-reverse;align-items:center;gap:1px;padding:4px 0;overflow:hidden;position:relative}
+.well i{display:block;width:80%;height:5px;border-radius:2px;background:var(--t);background-image:repeating-linear-gradient(90deg,transparent 0 7px,rgba(255,255,255,.5) 7px 9px);flex:none}
+.well i.new{animation:drop .5s ease-out both}
+@keyframes drop{from{transform:translateY(-30px);opacity:0}}
+.rfid{width:80%;height:3px;border-radius:2px;background:var(--brass);opacity:.5}
+.col.reading .rfid{background:var(--a-mint);opacity:1;box-shadow:0 0 8px var(--a-mint);animation:blink .6s ease-in-out infinite alternate}
+@keyframes blink{to{opacity:.35}}
+.col b{font:500 10px/1 var(--mono);color:#e8dcc0}
+.casebar{display:flex;justify-content:space-between;align-items:center;font:500 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#e8dcc0;padding:0 2px 8px;grid-column:1/-1}
+.bt{display:inline-flex;align-items:center;gap:6px}.bt::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--a-mint)}
+.readout{display:grid;gap:4px}
+.readout .li{padding:7px 0}
+@media (max-width:1240px){.stage{grid-template-columns:1fr}.phones{justify-content:center}}
+@media (max-width:820px){
+  .phones{grid-template-columns:1fr}
+  .switch{display:flex}
+  .ph[data-hide="1"]{display:none}
+}
+@media (max-width:440px){
+  .stage{padding-left:0;padding-right:0;padding-block:0 20px;gap:18px}
+  .guide{padding:20px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+  .phone{width:100%;height:740px;border-radius:0;padding:0;box-shadow:none;background:transparent}
+  .app{border-radius:0}.island{display:none}
+  .ph-label{display:none}
+}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+.card.pro{border:1.5px solid var(--brass)}.prostats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.prostats div{background:rgba(127,127,127,.1);border-radius:10px;padding:8px}.prostats b{display:block;font-size:15px}.prostats small{font-size:11.5px;color:var(--a-muted)}
+</style>
+<style>
+.tabs.t3{grid-template-columns:repeat(3,1fr)}
+.welcome{flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:30px 6px 4px;gap:20px}
+.welcome .logo{display:flex;flex-direction:column;gap:5px}
+.welcome .logo i{display:block;width:54px;height:11px;border-radius:6px}
+.welcome h2{font:800 40px/1.02 var(--display);letter-spacing:-.03em;margin:0}
+.welcome p{margin:0;color:var(--a-muted);font-size:15.5px}
+.apple{border:0;width:100%;background:#000;color:#fff;font-weight:700;padding:15px;border-radius:999px;font-size:16px}
+.hello{font:800 26px/1.05 var(--display);letter-spacing:-.02em;margin:0}
+.qr{width:112px;height:112px;flex:none;background:#fff;border-radius:10px;padding:6px}
+.codebig{font:800 34px/1 var(--mono);letter-spacing:.14em}
+.toggle{width:46px;height:28px;border-radius:14px;background:var(--a-accent);position:relative;border:0;flex:none}
+.toggle::after{content:"";position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+.toggle.off{background:#d5d8de}.toggle.off::after{right:21px}
+.ring.sm{width:110px;height:110px}.ring.sm svg{width:40px;height:40px}
+.idcard{width:200px;height:126px;border-radius:12px;border:2px dashed var(--a-accent);display:grid;place-items:center;color:var(--a-accent);font-weight:700;background:var(--a-accent-soft);position:relative;overflow:hidden}
+.idcard.scan::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--a-accent);box-shadow:0 0 12px var(--a-accent);animation:scan 1.2s ease-in-out infinite alternate}
+@keyframes scan{from{top:6%}to{top:92%}}
+.chapter{font:500 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:12px 12px 4px}
+.walk{max-height:none}
+.field{display:grid;gap:6px}
+.field input{font:inherit;font-size:16px;padding:12px 13px;border:1.5px solid var(--a-line);border-radius:12px;background:#fff;color:var(--a-ink);width:100%}
+.field input:focus{outline:none;border-color:var(--a-accent)}
+</style>
+<style>button.card{font:inherit;color:inherit;width:100%}button.card:hover{border-color:var(--a-accent)}</style>
+
+<div class="stage">
+  <aside class="guide">
+    <div class="brand"><span class="mark" aria-hidden="true"><i style="background:var(--c5)"></i><i style="background:var(--c25)"></i><i style="background:var(--c10)"></i></span>TrueStack</div>
+    <span class="eyebrow">Full app prototype · two phones, one app</span>
+    <h1>One app on every phone. Host a game or join one.</h1>
+    <p>Maya and Jordan have the same app. Either one can host with their TrueStack set, and the other can join. The steps below follow Maya hosting, but you can tap "Host a game" on Jordan's phone instead. Sam and Priya join from their own phones, so you'll see them show up.</p>
+    <div id="walk" class="walk"></div>
+    <div class="money">
+      <h3>How the set and the app work together</h3>
+      <ol>
+        <li><b>Bluetooth.</b> Phones near a set find its open game. A QR code or a 4-letter code works too.</li>
+        <li><b>Pay, then unlock.</b> Buy-ins go into the game pot, held by a licensed payment partner. Only then does the tray open and the chips you take unlock to you. Chips nobody paid for stay locked and are worth nothing at cash-out.</li>
+        <li><b>RFID in every chip.</b> A reader under each column counts chips leaving and coming back. Chips from another set don't count.</li>
+        <li><b>Exact payouts.</b> Cash-outs pay what the tray counted, straight to the player's TrueStack wallet.</li>
+        <li><b>Fees.</b> Debit cards are always free, for buy-ins and withdrawals. Credit cards always add the card fee (2.9% + 30¢), shown before paying.</li>
+      </ol>
+    </div>
+    <div class="tools">
+      <button class="ghost" id="reset" type="button">Start over</button>
+      <span class="note">Example people and amounts. No real payments.</span>
+    </div>
+  </aside>
+
+  <div style="display:grid;gap:14px;min-width:0">
+    <div class="switch" id="switch" role="tablist" aria-label="Choose a phone">
+      <button data-show="A" role="tab">Maya<span class="badge" id="badgeA" hidden>!</span></button>
+      <button data-show="B" role="tab">Jordan<span class="badge" id="badgeB" hidden>!</span></button>
+    </div>
+    <div class="phones">
+      <div class="ph" id="phA"><span class="ph-label" id="labA"></span><div class="phone"><div class="app" id="appA" aria-live="polite"></div></div></div>
+      <div class="ph" id="phB"><span class="ph-label" id="labB"></span><div class="phone"><div class="app" id="appB" aria-live="polite"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+var DEN=[{v:1,t:"var(--c1)",n:"$1",cap:40},{v:5,t:"var(--c5)",n:"$5",cap:25},{v:10,t:"var(--c10)",n:"$10",cap:15},{v:25,t:"var(--c25)",n:"$25",cap:12},{v:100,t:"var(--c100)",n:"$100",cap:8}];
+var SETVALUE=1415;
+var NAMES={A:"Maya",B:"Jordan"};
+var COLOR={Maya:"#0c7a66",Sam:"#2f6fd6",Jordan:"#b4572e",Priya:"#7a4bc4"};
+var SHARE={Maya:0.8,Sam:2.2,Jordan:1.55,Priya:0.45};
+var CARDS={Maya:{debit:"Visa Debit •••• 1180",credit:"Mastercard •••• 7742"},Jordan:{debit:"Visa Debit •••• 4821",credit:"Amex •••• 1007"}};
+var SETNAME={Maya:"TrueStack · Plum",Jordan:"TrueStack · Plum"};
+var HE={Maya:"her",Jordan:"his",Sam:"his",Priya:"her"};
+
+function chipsFor(a){var o={1:0,5:0,10:0,25:0,100:0};var ones=Math.min(10,a);o[1]=ones;var r=a-ones;while(r>=200){o[100]++;r-=100}while(r>=50){o[25]++;r-=25}while(r>=20){o[10]++;r-=10}while(r>=5){o[5]++;r-=5}o[1]+=r;return o;}
+function $(n){var a=Math.abs(n);return (n<0?"−$":"$")+(a%1?a.toFixed(2):a);}
+function sg(n){return n>0?"+"+$(n):n<0?$(n):"$0";}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]});}
+function ini(n){return n.slice(0,2);}
+function fee(a){return Math.round((a*0.029+0.30)*100)/100}
+function other(side){return side==="A"?"B":"A"}
+function sideOf(name){return NAMES.A===name?"A":NAMES.B===name?"B":null}
+
+function phone(){return {screen:"welcome",tab:"home",amt:20,stage:null,method:"debit",outStage:null,outMode:"early",vstage:null,draft:null,cashFor:null,camt:20,reading:false,pendingWd:null,code:""};}
+function fresh(){return {
+  sets:{Maya:false,Jordan:false},
+  game:null,
+  history:[
+    {name:"Thursday game",date:"Nov 13",host:"Jordan",pot:200,players:5,hrs:3.5,net:{Maya:18,Jordan:-7.5}},
+    {name:"Dorm 4B",date:"Nov 7",host:"Maya",pot:120,players:4,hrs:2.5,net:{Maya:-20,Jordan:22}},
+    {name:"Season opener",date:"Oct 31",host:"Maya",pot:260,players:6,hrs:4,net:{Maya:35,Jordan:-40}}],
+  users:{
+    Maya:{in:false,cards:false,bal:48,verified:false,log:[{t:"Thursday game · payout",a:58,d:"Nov 13"},{t:"To Visa Debit ·1180",a:-10,d:"Nov 14"}]},
+    Jordan:{in:false,cards:false,bal:12.5,verified:false,log:[{t:"Thursday game · payout",a:12.5,d:"Nov 13"}]}},
+  ph:{A:phone(),B:phone()},
+  show:"A"
+};}
+var S=fresh();
+var T=[];function later(f,ms){T.push(setTimeout(f,ms));}
+function clearT(){T.forEach(clearTimeout);T=[];}
+
+/* ---------- game helpers ---------- */
+function G(){return S.game}
+function pl(name){return G()?G().players.filter(function(p){return p.name===name})[0]:null}
+function isHost(name){return !!G()&&G().host===name}
+function inGame(name){var g=G();return !!g&&!!pl(name)&&g.state!=="ended";}
+function tin(p){return p.ins.reduce(function(s,x){return s+x.a},0)}
+function bought(){return G().players.reduce(function(s,p){return s+tin(p)},0)}
+function paidOut(){return G().players.reduce(function(s,p){return s+p.out},0)}
+function pot(){return G()?bought()-paidOut():0}
+function playing(){return G().players.filter(function(p){return p.status==="playing"})}
+function nextReturner(){return playing().filter(function(p){return G().final[p.name]==null})[0]}
+function share(p){var ps=playing();var w=ps.map(function(q){return Math.max(1,tin(q))*SHARE[q.name]});var tot=w.reduce(function(s,x){return s+x},0)||1;
+  var vals=ps.map(function(q,i){return Math.round(pot()*w[i]/tot)});var diff=pot()-vals.reduce(function(s,x){return s+x},0);vals[vals.length-1]+=diff;return vals[ps.indexOf(p)];}
+function earlyValue(name){var me=pl(name);return Math.max(1,Math.min(pot(),Math.round(tin(me)*1.55)));}
+function makeGame(host,name,buyin,cash){S.game={id:Date.now()+Math.random(),host:host,name:name||"Friday game",code:"QJ7K",buyin:buyin||20,cash:cash!==false,state:"lobby",final:{},
+  players:[{name:host,host:true,ins:[],out:0,status:"playing"}]};}
+function join(name){var g=G();if(!g||pl(name)||g.state==="ending"||g.state==="ended")return false;g.players.push({name:name,ins:[],out:0,status:"playing"});return true;}
+function buy(name,a,m){var p=pl(name);if(!p)return;p.ins.push({a:a,m:m||"tap"});}
+
+/* ---------- icons ---------- */
+var I={
+ bt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10-5 5V2l5 5L7 17"/></svg>',
+ ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+ home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+ wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="15" r="1.2" fill="currentColor"/></svg>',
+ hist:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+ set:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#e8dcc0" stroke-width="2" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7v12M11 7v12M15 7v12"/></svg>',
+ chev:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+ crown:'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7v12M11 7v12M15 7v12"/></svg>',
+ join:'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c.8-3.4 3.2-5 6-5s5.2 1.6 6 5"/><path d="M18 8v6M15 11h6"/></svg>',
+ id:'<svg viewBox="0 0 24 24" width="54" height="54" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.8 16c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14 10h4M14 13.5h3"/></svg>'
+};
+
+/* ---------- shared pieces ---------- */
+function shell(side,inner,opts){opts=opts||{};var X=S.ph[side];
+  var tabs=opts.noTabs?'':'<nav class="tabs t3" aria-label="App tabs">'+[['home','Home',I.home],['wallet','Wallet',I.wallet],['history','History',I.hist]].map(function(t){return '<button data-act="tab" data-v="'+t[0]+'" class="'+(X.tab===t[0]?'on':'')+'">'+t[2]+t[1]+'</button>'}).join('')+'</nav>';
+  return '<div class="sbar"><span>9:41</span><span class="island"></span><span class="sicons"><i style="width:17px;height:10px"></i><i style="width:24px;height:11px;border-radius:3px"></i></span></div><div class="scroll">'+inner+'</div>'+tabs+(opts.extra||'')+'<div class="toast" data-toast></div>';}
+function back(act,label){return '<button class="back" data-act="'+act+'">'+I.chev+label+'</button>';}
+function av(name){return '<span class="av" style="background:'+COLOR[name]+'">'+ini(name)+'</span>';}
+function trayViz(add,reading,owner){var out=chipsFor(Math.max(0,pot()));
+  return '<div class="tray" role="img" aria-label="TrueStack tray with an RFID reader under each column"><div class="casebar"><span>'+(owner?esc(owner)+'’s set':'TrueStack · Plum')+'</span><span class="bt">Connected</span></div>'+DEN.map(function(d){var base=Math.max(3,Math.min(12,12-Math.round(out[d.v]/3)));var n=add?add[d.v]:0;var h='';for(var k=0;k<base;k++)h+='<i style="--t:'+d.t+'"></i>';for(k=0;k<Math.min(n,8);k++)h+='<i class="new" style="--t:'+d.t+';animation-delay:'+(k*60)+'ms"></i>';
+   return '<div class="col'+(reading&&(n||reading==='all')?' reading':'')+'"><div class="well">'+h+'</div><span class="rfid"></span><b>'+d.n+'</b></div>';}).join('')+'</div>';}
+function potCard(){var g=G();var pill=g.state==='lobby'?'<span class="pill amber">WAITING TO START</span>':g.state==='ended'?'<span class="pill grey">ENDED</span>':g.state==='ending'?'<span class="pill amber">CASHING OUT</span>':'<span class="pill live">● LIVE · '+g.code+'</span>';
+  return '<div class="dark"><div class="row"><span class="lbl">Pot held by TrueStack</span>'+pill+'</div><div class="row" style="margin-top:10px;align-items:end"><div class="big">'+$(pot())+'</div><div class="lbl" style="text-align:right;color:var(--a-mint)">'+playing().length+' playing<br>'+$(paidOut())+' paid out</div></div></div>';}
+function rows(me){var g=G();var host=isHost(me);return g.players.map(function(p){
+  var st=p.status==='cashed'?'<span class="pill grey">OUT '+$(p.out)+'</span>':(g.state==='ending'&&g.final[p.name]!=null?'<span class="pill">COUNTED '+$(g.final[p.name])+'</span>':'');
+  var btn=host&&g.cash&&p.status==='playing'&&(g.state==='live'||g.state==='lobby')&&!p.host?'<button class="mini" data-act="h-cash" data-v="'+p.name+'">+ Cash</button>':'';
+  return '<div class="li"><div class="who">'+av(p.name)+'<div style="min-width:0"><b>'+esc(p.name)+(p.host?'<span class="tag">HOST</span>':'')+(p.name===me?'<span class="tag me">YOU</span>':'')+'</b><small>'+(p.ins.length?'In '+$(tin(p))+' · '+p.ins.length+' buy-in'+(p.ins.length>1?'s':''):'Joined · not in yet')+'</small></div></div><div style="display:flex;gap:8px;align-items:center">'+st+btn+'</div></div>';}).join('');}
+function qr(){var n=21,s='',seed=7;function r(){seed=(seed*9301+49297)%233280;return seed/233280}
+  function finder(x,y){return '<rect x="'+x+'" y="'+y+'" width="7" height="7" fill="#15171d"/><rect x="'+(x+1)+'" y="'+(y+1)+'" width="5" height="5" fill="#fff"/><rect x="'+(x+2)+'" y="'+(y+2)+'" width="3" height="3" fill="#15171d"/>';}
+  for(var y=0;y<n;y++)for(var x=0;x<n;x++){if((x<8&&y<8)||(x>12&&y<8)||(x<8&&y>12))continue;if(r()<.48)s+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="#15171d"/>';}
+  return '<svg class="qr" viewBox="0 0 21 21" aria-label="Game QR code" shape-rendering="crispEdges">'+s+finder(0,0)+finder(14,0)+finder(0,14)+'</svg>';}
+function chipRow(c){return DEN.filter(function(d){return c[d.v]}).map(function(d){return '<span class="chipdot"><span class="dot" style="--t:'+d.t+'"></span>'+c[d.v]+' × '+d.n+'</span>'}).join('');}
+function chipList(c){return DEN.filter(function(d){return c[d.v]}).map(function(d){return '<div class="li"><span class="chipdot"><span class="dot" style="--t:'+d.t+'"></span>'+c[d.v]+' × '+d.n+'</span><span class="num">'+$(c[d.v]*d.v)+'</span></div>'}).join('');}
+
+/* ---------- screens (the same app on both phones) ---------- */
+var V={};
+V.welcome=function(side,me){return shell(side,'<div class="welcome"><div class="logo"><i style="background:var(--c5)"></i><i style="background:var(--c25)"></i><i style="background:var(--c10)"></i></div><div style="display:grid;gap:12px"><h2>Poker night, counted to the chip.</h2><p>Host a game with your TrueStack set, or join a friend’s. Buy in with a tap and cash out for exactly what you have.</p></div><div style="display:grid;gap:10px"><button class="apple" data-act="signin">Continue with Apple</button><p class="fine" style="text-align:center">Signing in as '+me+'</p></div></div>',{noTabs:true});};
+V.card=function(side,me){var c=CARDS[me];return shell(side,'<div class="top"><span></span><span class="pill">ONE-TIME SETUP</span></div><h3 class="h2">Add your cards</h3><p class="fine" style="font-size:14px">You’ll pick one each time you buy in. Winnings go to your TrueStack wallet.</p>'+
+  '<div class="card"><div class="list"><div class="li"><div><b>'+c.debit+'</b><small>Apple Pay · buy in with no fee</small></div><span class="pill">FOUND</span></div><div class="li"><div><b>'+c.credit+'</b><small>Apple Pay · credit adds 2.9% + 30¢</small></div><span class="pill">FOUND</span></div></div></div>'+
+  '<div class="card" style="font-size:14px;color:var(--a-muted)">Debit buy-ins are always free. Credit card buy-ins always carry the card fee, shown before you pay.</div>'+
+  '<button class="cta" data-act="addcards">Add both cards</button><p class="fine" style="text-align:center">We’ll ask for ID once, the first time you withdraw winnings.</p>',{noTabs:true});};
+V.home=function(side,me){var g=G(),top;
+  if(inGame(me)){var host=isHost(me);top='<div class="dark"><div class="row"><span class="lbl">'+(host?'You’re hosting':'You’re in a game')+'</span><span class="pill live">● '+g.code+'</span></div><div class="row" style="margin-top:10px;align-items:end"><div><div style="font-weight:700;font-size:17px">'+esc(g.name)+'</div><div class="lbl" style="margin-top:4px">'+(host?'Your set':'At '+esc(g.host)+'’s')+' · '+g.players.length+' players</div></div><div class="big">'+$(pot())+'</div></div><button class="cta" style="margin-top:14px" data-act="to-table">Open game</button></div>';}
+  else{var nearby=g&&(g.state==='lobby'||g.state==='live')?'1 game nearby: '+esc(g.name)+' at '+esc(g.host)+'’s':'Find a game near you or enter a code';
+    top='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+      '<button class="card" data-act="host" style="text-align:left;display:grid;gap:8px;cursor:pointer"><span style="color:var(--a-accent)">'+I.crown+'</span><b style="font-size:17px">Host a game</b><small style="color:var(--a-muted);font-size:12.5px">'+(S.sets[me]?'Use your TrueStack set':'Connect your set first')+'</small></button>'+
+      '<button class="card" data-act="join" style="text-align:left;display:grid;gap:8px;cursor:pointer"><span style="color:var(--a-accent)">'+I.join+'</span><b style="font-size:17px">Join a game</b><small style="color:var(--a-muted);font-size:12.5px">'+nearby+'</small></button></div>';}
+  var set=S.sets[me]&&!inGame(me)?'<div class="card"><div class="row" style="margin-bottom:10px"><span class="lbl">Your set</span><span class="lbl">Battery 86%</span></div>'+trayViz(null,false,me)+'</div>':'';
+  return shell(side,'<div class="top"><h2 class="hello">Hi, '+me+'</h2><span class="pill">'+(S.sets[me]?'SET CONNECTED':'NO SET')+'</span></div>'+top+set+
+   '<div class="card"><span class="lbl">Recent games</span><div class="list" style="margin-top:4px">'+S.history.slice(0,3).map(function(h){var n=h.net[me]||0;return '<div class="li"><div><b>'+esc(h.name)+'</b><small>'+h.date+' · hosted by '+(h.host===me?'you':esc(h.host))+'</small></div><span class="num '+(n>=0?'pos':'neg')+'">'+sg(n)+'</span></div>'}).join('')+'</div></div>');};
+V.join=function(side,me){var g=G(),X=S.ph[side];var open=g&&(g.state==='lobby'||g.state==='live')&&!pl(me);
+  var near=open?'<div class="card"><span class="lbl">Games near you · Bluetooth</span><div class="list" style="margin-top:4px"><div class="li"><div class="who"><span class="av" style="background:var(--case)">'+I.set+'</span><div><b>'+esc(g.name)+'</b><small>'+esc(g.host)+'’s set · '+g.players.length+' players · about 3 ft away</small></div></div><button class="mini dk" data-act="join-go">Join</button></div></div></div>':
+   '<div class="card" style="text-align:center;display:grid;gap:10px;justify-items:center;padding:22px 14px"><div class="ring sm">'+I.bt+'</div><b>Looking for games nearby…</b><p class="fine">When someone near you opens a game, it shows up here.</p></div>';
+  return shell(side,'<div class="top">'+back('go-home','Home')+'<span class="pill">BLUETOOTH ON</span></div><h3 class="h2">Join a game</h3>'+near+
+   '<div class="field"><span class="lbl">Or enter the code from the host’s screen</span><div style="display:flex;gap:8px"><input id="code'+side+'" class="input" maxlength="4" placeholder="CODE" value="'+esc(X.code)+'" aria-label="Game code" style="flex:1;min-width:0"><button class="mini dk" data-act="join-code" style="padding:0 18px">Join</button></div></div>'+
+   '<button class="cta ol" data-act="join-qr">Scan QR code</button>',{noTabs:true});};
+V.pair=function(side,me){var st=S.ph[side].stage;var body;
+  if(st==='search')body='<div class="tap"><div class="ring">'+I.bt+'</div><div><div style="font-weight:700;font-size:18px">Looking for your set…</div><p class="fine" style="font-size:14px;margin-top:4px">Hold the power button on the side of the case until it glows.</p></div></div>';
+  else if(st==='found')body='<h3 class="h2">Found it</h3><div class="card"><div class="list"><div class="li"><div class="who"><span class="av" style="background:var(--case)">'+I.set+'</span><div><b>'+SETNAME[me]+'</b><small>Serial TS-0'+(me==='Maya'?'4187':'5290')+' · about 1 ft away</small></div></div><button class="mini dk" data-act="pair-go">Pair</button></div></div></div><p class="fine">Pairing registers this set’s 100 chips to your account. Chips from any other set won’t be counted.</p>';
+  else if(st==='check')body='<h3 class="h2">Checking every chip…</h3><p class="fine" style="font-size:14px">The readers under each column are scanning the tray.</p>'+trayViz(null,'all',me);
+  else body='<h3 class="h2">Your set is ready</h3>'+trayViz(null,false,me)+'<div class="card"><div class="list">'+DEN.map(function(d){return '<div class="li"><span class="chipdot"><span class="dot" style="--t:'+d.t+'"></span>'+d.n+' chips</span><span class="num">'+d.cap+' of '+d.cap+' ✓</span></div>'}).join('')+'</div></div><button class="cta" data-act="host">Host a game</button><button class="cta ol" data-act="go-home">Not now</button>';
+  return shell(side,'<div class="top">'+(st==='done'?'<span></span>':back('go-home','Cancel'))+'<span class="pill">BLUETOOTH</span></div>'+body,{noTabs:true});};
+V.new=function(side,me){var d=S.ph[side].draft;
+  return shell(side,'<div class="top">'+back('go-home','Home')+'</div><h3 class="h2">Host a game</h3>'+
+   '<div class="field"><span class="lbl">Game name</span><input id="gName'+side+'" class="plain" value="'+esc(d.name)+'" maxlength="24"></div>'+
+   '<div class="field"><span class="lbl">Suggested buy-in</span><div class="seg">'+[10,20,40,50].map(function(v){return '<button data-act="d-buy" data-v="'+v+'" class="'+(d.buyin===v?'on':'')+'">$'+v+'</button>'}).join('')+'</div></div>'+
+   '<div class="card"><div class="list"><div class="li"><div><b>Allow cash buy-ins</b><small>You log cash in the app and the tray and chips unlock.</small></div><button class="toggle '+(d.cash?'':'off')+'" data-act="d-cash" aria-label="Allow cash buy-ins" aria-pressed="'+d.cash+'"></button></div><div class="li"><div><b>Who can join</b><small>Anyone near your set, or with the code.</small></div></div></div></div>'+
+   '<button class="cta" data-act="open">Open game</button>',{noTabs:true});};
+V.table=function(side,me){var g=G();return isHost(me)?hostTable(side,me):playerTable(side,me);};
+function hostTable(side,me){var g=G();var mine=pl(me);
+  var lobby=g.state==='lobby'?'<div class="card"><div class="row" style="gap:14px;align-items:center">'+qr()+'<div style="display:grid;gap:6px"><span class="lbl">Join code</span><span class="codebig">'+g.code+'</span><span class="fine">Phones near your set see this game on their own.</span></div></div></div>':'';
+  var actions=g.state==='lobby'?'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="cta ol" data-act="buy-start">'+(mine.ins.length?'Rebuy':'Buy in')+'</button><button class="cta" data-act="h-start" '+(g.players.length<2?'disabled':'')+'>Start game</button></div>':
+    g.state==='live'?'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="cta ol" data-act="buy-start">'+(mine.ins.length?'Rebuy':'Buy in')+'</button><button class="cta dk" data-act="h-end" '+(pot()>0?'':'disabled')+'>End game</button></div>':
+    g.state==='ending'?'<button class="cta" data-act="to-table">Continue cash-out</button>':'';
+  return shell(side,'<div class="top">'+back('go-home','Home')+'<span class="pill">YOU’RE HOSTING</span></div><h3 class="h2">'+esc(g.name)+'</h3>'+lobby+potCard()+actions+
+   '<div class="card"><div class="row" style="margin-bottom:4px"><span class="lbl">Table</span><span class="lbl">'+g.players.length+' players</span></div><div class="list">'+rows(me)+'</div></div>'+
+   (g.state!=='lobby'?'<div class="card"><div class="row" style="margin-bottom:10px"><span class="lbl">Tray, live</span><span class="lbl">'+$(SETVALUE-pot())+' in the tray</span></div>'+trayViz(null,false,me)+'</div>':'')+
+   '<p class="fine">Players pay and cash out from their own phones. The tray counts every chip, so you never have to check anyone’s count.</p>',{noTabs:true});}
+function playerTable(side,me){var g=G(),p=pl(me);var card;
+  if(g.state==='ended'||p.status==='cashed'){var n=p.out-tin(p);card='<div class="card"><div class="row"><span class="lbl">You cashed out</span><span class="pill grey">DONE</span></div><div class="row" style="margin-top:8px;align-items:end"><div class="big pos" style="font-size:30px">'+$(p.out)+'</div><span class="num '+(n>=0?'pos':'neg')+'">'+sg(n)+' tonight</span></div><p class="fine" style="margin-top:8px">Counted by the tray and sent to your wallet.</p><button class="cta" style="margin-top:12px" data-act="to-wallet">See my wallet</button></div>';}
+  else if(g.state==='ending'){var nx=nextReturner();
+    if(g.final[me]!=null)card='<div class="card"><div class="row"><span class="lbl">Your chips were counted</span><span class="num">'+$(g.final[me])+'</span></div><p class="fine" style="margin-top:6px">You’ll be paid when '+esc(g.host)+' finishes the cash-out.</p></div>';
+    else if(nx&&nx.name===me)card='<div class="alert"><b>Your turn: put your chips back</b><p class="fine" style="color:#7a5a1c">'+esc(g.host)+' ended the game. Put your chips in the tray, each color in its column.</p><button class="cta" data-act="return">I’m ready</button></div>';
+    else card='<div class="card"><div class="row"><span class="lbl">Cashing out</span><span class="pill grey">WAIT</span></div><p class="fine" style="margin-top:6px">'+(nx?esc(nx.name)+' is putting chips back. Your turn is coming.':'')+'</p></div>';}
+  else card='<div class="card"><div class="row"><span class="lbl">Your buy-ins</span><span class="num">'+$(tin(p))+'</span></div>'+(g.state==='lobby'?'<p class="fine" style="margin-top:6px">Waiting for '+esc(g.host)+' to start. You can buy in now.</p>':'')+'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><button class="cta" data-act="buy-start">'+(p.ins.length?'Rebuy':'Buy in')+'</button><button class="cta ol" data-act="early" '+(p.ins.length&&g.state==='live'?'':'disabled')+'>Cash out</button></div></div>';
+  return shell(side,'<div class="top">'+back('go-home','Home')+'<span class="pill">HOST · '+esc(g.host).toUpperCase()+'</span></div><h3 class="h2">'+esc(g.name)+'</h3>'+card+potCard()+
+   '<div class="card"><span class="lbl">Everyone at the table</span><div class="list" style="margin-top:4px">'+rows(me)+'</div></div><p class="fine">Every player sees the same pot and buy-ins, live.</p>',{noTabs:true});}
+V.pay=function(side,me){var X=S.ph[side],a=X.amt,st=X.stage,g=G();var f=X.method==='credit'?fee(a):0;
+  if(st==='pick')return shell(side,'<div class="top">'+back('to-table','Game')+'</div><h3 class="h2">'+(pl(me).ins.length?'Rebuy':'Buy in')+'</h3><div class="seg">'+[20,40,60,100].map(function(v){return '<button data-act="amt" data-v="'+v+'" class="'+(a===v?'on':'')+'">$'+v+'</button>'}).join('')+'</div>'+
+   '<div class="card"><span class="lbl">The tray will release and unlock</span><div class="chips" style="margin-top:10px">'+chipRow(chipsFor(a))+'</div></div>'+
+   '<div class="field"><span class="lbl">Pay with</span><div class="seg seg2">'+['debit','credit'].map(function(m){return '<button data-act="method" data-v="'+m+'" class="'+(X.method===m?'on':'')+'" style="font-size:13.5px;line-height:1.3">'+(m==='debit'?'Debit card<br><small style="font-weight:500">No fee</small>':'Credit card<br><small style="font-weight:500">+$'+fee(a).toFixed(2)+' fee</small>')+'</button>'}).join('')+'</div></div>'+
+   '<div class="card"><div class="row" style="font-size:14px"><span>Buy-in</span><span class="num">$'+a.toFixed(2)+'</span></div><div class="row" style="font-size:14px;margin-top:6px;color:var(--a-muted)"><span>'+(X.method==='credit'?'Credit card fee (2.9% + 30¢)':'Debit card fee')+'</span><span class="num">'+(f?'$'+f.toFixed(2):'Free')+'</span></div><div class="row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--a-line)"><b>Total</b><b class="num">$'+(a+f).toFixed(2)+'</b></div></div>'+
+   '<button class="cta" data-act="pay-open">Pay $'+(a+f).toFixed(2)+'</button>',{noTabs:true});
+  var body=st==='done'?'<div class="ring ok">'+I.ok+'</div><div class="amount">'+$(a)+'</div><div><div style="font-weight:700;font-size:17px">Tray and chips unlocked</div><p class="fine" style="font-size:14px;margin-top:4px">Take these chips. They are now unlocked to you, and the tray counted them leaving.</p></div><div class="chips" style="justify-content:center">'+chipRow(chipsFor(a))+'</div><button class="cta" data-act="to-table" style="max-width:220px">Back to the game</button>'
+    :'<div class="ring">'+I.bt+'</div><div class="amount">'+$(a)+'</div><div><div style="font-weight:700;font-size:17px">Connected to '+(isHost(me)?'your':esc(g.host)+'’s')+' set</div><p class="fine" style="font-size:14px;margin-top:4px">Bluetooth · confirm to pay</p></div>';
+  var sheet=st==='sheet'?'<div class="sheet"><div class="sheet-in"><span class="grab"></span><div class="row"><b style="font-size:17px">Pay TrueStack</b><button class="back" data-act="pay-cancel" style="color:var(--a-muted)">Cancel</button></div><div class="pay-row"><span style="color:var(--a-muted)">Card</span><span>'+CARDS[me][X.method]+'</span></div>'+(f?'<div class="pay-row"><span style="color:var(--a-muted)">Credit card fee</span><span>$'+f.toFixed(2)+'</span></div>':'')+'<div class="pay-row"><span style="color:var(--a-muted)">For</span><span>'+esc(g.name)+' buy-in</span></div><div class="pay-row"><b>Total</b><b>$'+(a+f).toFixed(2)+'</b></div><button class="applepay" data-act="pay-confirm">Pay with Face ID</button></div></div>':'';
+  return shell(side,'<div class="top"><span></span><span class="pill">BUY-IN</span></div><div class="tap">'+body+'</div>',{noTabs:true,extra:sheet});};
+V.cash=function(side,me){var X=S.ph[side],p=pl(X.cashFor);
+  return shell(side,'<div class="top">'+back('to-table','Game')+'</div><h3 class="h2">Cash buy-in for '+esc(p.name)+'</h3><div class="seg">'+[20,40,60,100].map(function(v){return '<button data-act="camt" data-v="'+v+'" class="'+(X.camt===v?'on':'')+'">$'+v+'</button>'}).join('')+'</div>'+
+   '<div class="card"><span class="lbl">The tray will release and unlock</span><div class="chips" style="margin-top:10px">'+chipRow(chipsFor(X.camt))+'</div></div>'+
+   '<div class="card"><p class="fine" style="font-size:14px">You keep the cash, and TrueStack logs '+$(X.camt)+' for '+esc(p.name)+'. When '+esc(p.name)+' cashes out, the payout comes from the pot like everyone else’s.</p></div>'+
+   '<button class="cta" data-act="cash-ok">Log '+$(X.camt)+' cash and unlock chips</button>',{noTabs:true});};
+V.end=function(side,me){var g=G(),X=S.ph[side];var nx=nextReturner();var ps=playing();var sum=ps.reduce(function(s,p){return s+(g.final[p.name]||0)},0);
+  var btn=!nx?'<div class="check ok">Tray counted '+$(sum)+'. Every chip from tonight is back.</div><button class="cta" data-act="payall">Pay everyone from the pot</button>':
+    nx.name===me?'<button class="cta" data-act="sim-return">Put my chips back</button>':
+    sideOf(nx.name)?'<div class="alert"><b>Waiting for '+esc(nx.name)+'</b><p class="fine" style="color:#7a5a1c">'+esc(nx.name)+'’s phone is asking '+(nx.name==='Maya'?'her':'him')+' to put '+HE[nx.name]+' chips back in the tray.</p></div>':
+    '<button class="cta ol" data-act="sim-return">'+esc(nx.name)+' puts chips back</button>';
+  return shell(side,'<div class="top">'+back('to-tablehost','Game')+'<span class="pill amber">CASHING OUT</span></div><h3 class="h2">Return your chips</h3><p class="fine" style="font-size:14px">One player at a time puts their chips back, each color in its column. The tray counts them. Nobody types a number.</p>'+
+   '<div class="card"><div class="list">'+ps.map(function(p){var v=g.final[p.name];return '<div class="li"><div class="who">'+av(p.name)+'<div><b>'+esc(p.name)+(p.name===me?'<span class="tag me">YOU</span>':'')+'</b><small>In '+$(tin(p))+'</small></div></div>'+(v==null?(p===nx?'<span class="pill amber">THEIR TURN</span>':'<span class="pill grey">WAITING</span>'):'<span class="num">'+$(v)+'</span>')+'</div>'}).join('')+'</div></div>'+
+   trayViz(nx&&X.reading?chipsFor(share(nx)):null,!!X.reading,me)+btn,{noTabs:true});};
+V.done=function(side,me){var g=G();
+  return shell(side,'<div class="top"><h2>Game over</h2><span class="pill grey">ENDED · 11:48 PM</span></div>'+
+   '<div class="dark"><span class="lbl">Paid out from the pot</span><div class="big" style="margin-top:8px">'+$(paidOut())+'</div><div class="lbl" style="margin-top:6px;color:var(--a-mint)">Pot left: '+$(pot())+' · every chip back in the tray</div></div>'+
+   '<div class="card"><table style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums"><thead><tr>'+['Player','In','Out','Net'].map(function(h,i){return '<th class="lbl" style="text-align:'+(i?'right':'left')+';padding-bottom:8px;font-weight:500">'+h+'</th>'}).join('')+'</tr></thead><tbody>'+
+   g.players.map(function(p){var n=p.out-tin(p);return '<tr style="border-top:1px solid var(--a-line)"><td style="padding:9px 0;font-weight:600">'+esc(p.name)+'</td><td style="text-align:right">'+$(tin(p))+'</td><td style="text-align:right">'+$(p.out)+'</td><td style="text-align:right;font-weight:600" class="'+(n>0?'pos':n<0?'neg':'')+'">'+sg(n)+'</td></tr>'}).join('')+'</tbody></table></div>'+
+   '<p class="fine">Each payout went to that player’s TrueStack wallet, yours included.</p><button class="cta" data-act="finish">Save to history</button>',{noTabs:true});};
+V.out=function(side,me){var X=S.ph[side],st=X.outStage,mode=X.outMode;var v=mode==='final'?share(pl(me)):earlyValue(me);var c=chipsFor(v);
+  var tray=trayViz(st==='place'?null:c,st==='reading',G().host);var body;
+  if(st==='place')body='<h3 class="h2">'+(mode==='final'?'Put your chips back':'Cash out early')+'</h3><p class="fine" style="font-size:14px">Put all your chips back in the tray, each color in its own column. The tray counts them. No typing, no guessing.</p>'+tray+'<button class="cta" data-act="place">My chips are in</button>';
+  else if(st==='reading')body='<h3 class="h2">Counting your chips…</h3><p class="fine" style="font-size:14px">The readers under each column are scanning.</p>'+tray;
+  else body='<h3 class="h2">The tray counted '+$(v)+'</h3>'+tray+'<div class="card"><span class="lbl">Read by the tray</span><div class="list">'+chipList(c)+'</div></div>'+
+    (mode==='final'?'<button class="cta" data-act="final-ok">Confirm '+$(v)+'</button>':'<button class="cta" data-act="cashout">Cash out '+$(v)+' to my wallet</button>')+'<p class="fine" style="text-align:center">Looks wrong? Take your chips out and put them back to recount.</p>';
+  return shell(side,'<div class="top">'+(st==='reading'||mode==='final'?'<span></span>':back('to-table','Game'))+'<span class="pill">'+(st==='read'?'COUNT CONFIRMED':'TRAY · BLUETOOTH')+'</span></div>'+body,{noTabs:true});};
+V.verify=function(side,me){var st=S.ph[side].vstage;var body;
+  if(st==='intro')body='<h3 class="h2">Verify it’s you</h3><p class="fine" style="font-size:14px">Required once by our payment partner before your first withdrawal. Takes about a minute.</p><div class="card"><div class="list"><div class="li"><b>1. Photo of your driver’s license</b></div><div class="li"><b>2. Quick selfie</b></div></div></div><button class="cta" data-act="v-scan">Start</button>';
+  else if(st==='scan')body='<div class="tap"><div class="idcard scan">'+I.id+'</div><div style="font-weight:700;font-size:17px">Hold your license in the frame</div><p class="fine">Scanning…</p></div>';
+  else body='<div class="tap"><div class="ring ok">'+I.ok+'</div><div style="font-weight:700;font-size:18px">You’re verified</div><p class="fine" style="font-size:14px">You won’t be asked again.</p><button class="cta" data-act="v-done" style="max-width:240px">Finish withdrawal</button></div>';
+  return shell(side,'<div class="top">'+(st==='intro'?back('to-wallet','Wallet'):'<span></span>')+'<span class="pill">ONE-TIME CHECK</span></div>'+body,{noTabs:true});};
+V.wallet=function(side,me){var u=S.users[me];
+  return shell(side,'<div class="top"><h2>Wallet</h2></div><div class="dark"><span class="lbl">TrueStack balance</span><div class="big" style="margin-top:8px">'+$(u.bal)+'</div></div>'+
+   '<div style="display:grid;gap:8px"><button class="cta" data-act="wd" data-v="card" '+(u.bal<=0?'disabled':'')+'>To debit card · minutes · free</button><button class="cta ol" data-act="wd" data-v="bank" '+(u.bal<=0?'disabled':'')+'>To bank · 1–3 days · free</button></div>'+
+   '<div class="card"><span class="lbl">Activity</span><div class="list" style="margin-top:4px">'+u.log.map(function(l){return '<div class="li"><div><b style="font-size:14.5px">'+esc(l.t)+'</b><small>'+l.d+'</small></div><span class="num '+(l.a>=0?'pos':'')+'">'+(l.a>=0?'+':'−')+'$'+Math.abs(l.a).toFixed(2)+'</span></div>'}).join('')+'</div></div>'+
+   '<p class="fine">Your balance is held by TrueStack’s payment partner, not by any host.</p>');};
+V.history=function(side,me){var tot=S.history.reduce(function(s,h){return s+(h.net[me]||0)},0);
+  var hrs=S.history.reduce(function(s,h){return s+(h.hrs||0)},0),rate=hrs?tot/hrs:0,wins=S.history.filter(function(h){return (h.net[me]||0)>0}).length,best=S.history.reduce(function(m,h){return Math.max(m,h.net[me]||0)},0);
+  var rs=(rate>=0?'+$':'−$')+Math.abs(rate).toFixed(2);
+  return shell(side,'<div class="top"><h2>History</h2></div><div class="dark"><span class="lbl">Your season</span><div class="row" style="margin-top:8px;align-items:end"><div class="big">'+sg(tot)+'</div><div class="lbl" style="text-align:right;color:var(--a-mint)">'+S.history.length+' games</div></div></div>'+
+   '<div class="card pro"><div class="row"><span class="lbl">TrueStack Pro</span><span class="pill">PRO</span></div><div class="row" style="margin-top:10px;align-items:end"><div><div class="amount" style="font-size:30px">'+rs+'<small style="font-size:15px;font-weight:600">/hr</small></div><small class="fine" style="display:block;margin-top:2px">Your poker hourly rate</small></div><div class="lbl" style="text-align:right">'+hrs+' hours played</div></div>'+
+   '<div class="prostats"><div><b>'+wins+' of '+S.history.length+'</b><small>games won</small></div><div><b>'+$(best)+'</b><small>best night</small></div><div><b>'+sg(S.history.length?Math.round(tot/S.history.length*100)/100:0)+'</b><small>per game</small></div></div>'+
+   '<p class="fine" style="margin-top:8px">Total won or lost, divided by hours at the table. Every number comes from the tray’s count.</p></div>'+
+   '<div class="card"><div class="list">'+S.history.map(function(h){var n=h.net[me]||0;return '<div class="li"><div><b>'+esc(h.name)+'</b><small>'+h.date+' · '+(h.hrs||0)+' hr · hosted by '+(h.host===me?'you':esc(h.host))+' · '+$(h.pot)+' pot</small></div><span class="num '+(n>=0?'pos':'neg')+'">'+sg(n)+'</span></div>'}).join('')+'</div></div>'+
+   '<p class="fine">Every result here came from the tray’s count, so nobody has to remember who owes what.</p>');};
+
+/* ---------- render ---------- */
+var EL={A:document.getElementById('appA'),B:document.getElementById('appB')};
+function render(){['A','B'].forEach(function(side){var el=EL[side],X=S.ph[side];var sc=el.querySelector('.scroll'),top=sc?sc.scrollTop:0;var k=X.screen+(X.stage||'')+(X.outStage||'')+(X.vstage||'');
+  el.innerHTML=V[X.screen](side,NAMES[side]);if(el.dataset.k===k)el.querySelector('.scroll').scrollTop=top;el.dataset.k=k;
+  var me=NAMES[side];document.getElementById('lab'+side).innerHTML='<b>'+me+'’s phone</b>'+(inGame(me)?(isHost(me)?' · hosting':' · playing'):'');});
+  renderWalk();renderSwitch();}
+function toast(side,t){var el=EL[side].querySelector('[data-toast]');if(!el)return;el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove('show')},2400);
+  if(S.show!==side)document.getElementById('badge'+side).hidden=false;}
+function toastName(name,t){var s=sideOf(name);if(s)toast(s,t);}
+function toastOthers(except,t){['A','B'].forEach(function(s){if(NAMES[s]!==except&&inGame(NAMES[s]))toast(s,t);});}
+function renderSwitch(){document.querySelectorAll('#switch button').forEach(function(b){b.classList.toggle('on',b.dataset.show===S.show)});
+  ['A','B'].forEach(function(s){document.getElementById('ph'+s).dataset.hide=S.show===s?'0':'1';});document.getElementById('badge'+S.show).hidden=true;}
+document.getElementById('switch').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;S.show=b.dataset.show;renderSwitch();});
+
+/* Sam and Priya, on their own phones */
+function bots(){var id=G().id;function ok(){var g=G();return g&&g.id===id&&(g.state==='lobby'||g.state==='live');}
+  later(function(){if(!ok())return;join('Sam');render();toastName(G().host,'Sam joined from his phone');},1600);
+  later(function(){if(!ok())return;join('Priya');render();toastName(G().host,'Priya joined from her phone');},3000);
+  later(function(){if(!ok())return;buy('Sam',20);render();toastName(G().host,'Sam paid $20. Chips unlocked.');},4600);
+  later(function(){if(!ok())return;buy('Priya',40);render();toastName(G().host,'Priya paid $40. Chips unlocked.');},6000);}
+
+function goHome(X){X.screen='home';X.tab='home';X.stage=null;}
+function doJoin(side,me){if(join(me)){var X=S.ph[side];X.screen='table';render();toastName(G().host,me+' joined from '+HE[me]+' phone');}}
+function act(side,a,d){var X=S.ph[side],me=NAMES[side],g=G();
+  switch(a){
+  case 'signin':S.users[me].in=true;X.screen='card';break;
+  case 'addcards':S.users[me].cards=true;goHome(X);break;
+  case 'tab':X.tab=d.v;X.screen=d.v;X.stage=null;break;
+  case 'go-home':goHome(X);break;
+  case 'to-table':X.stage=null;X.screen=(g&&isHost(me)&&g.state==='ending')?'end':(g&&isHost(me)&&g.state==='ended')?'done':'table';break;
+  case 'to-tablehost':X.screen='table';break;
+  case 'to-wallet':X.screen='wallet';X.tab='wallet';break;
+  /* host or join, from the same home screen */
+  case 'host':if(g&&g.state!=='ended'&&!inGame(me)){render();toast(side,'This demo runs one game at a time. Join '+g.host+'’s game instead.');return;}
+    if(!S.sets[me]){X.screen='pair';X.stage='search';render();later(function(){if(X.screen==='pair'&&X.stage==='search'){X.stage='found';render();}},1700);return;}
+    X.draft={name:me==='Maya'?'Friday game':'Jordan’s game',buyin:20,cash:true};X.screen='new';break;
+  case 'pair-go':X.stage='check';render();later(function(){if(X.screen==='pair'){S.sets[me]=true;X.stage='done';render();toast(side,'100 chips registered to your set');}},1800);return;
+  case 'd-buy':X.draft.name=document.getElementById('gName'+side).value;X.draft.buyin=+d.v;break;
+  case 'd-cash':X.draft.name=document.getElementById('gName'+side).value;X.draft.cash=!X.draft.cash;break;
+  case 'open':var dr=X.draft;dr.name=document.getElementById('gName'+side).value||'Home game';makeGame(me,dr.name,dr.buyin,dr.cash);X.screen='table';render();
+    var o=other(side);if(S.users[NAMES[o]].cards)toast(o,'A game opened near you: '+dr.name);bots();return;
+  case 'join':X.screen='join';X.code='';break;
+  case 'join-go':case 'join-qr':if(g&&(g.state==='lobby'||g.state==='live')){doJoin(side,me);return;}render();toast(side,'No game found nearby yet');return;
+  case 'join-code':var c=(document.getElementById('code'+side).value||'').trim().toUpperCase();X.code=c;if(g&&(g.state==='lobby'||g.state==='live')&&c===g.code){doJoin(side,me);return;}render();toast(side,c?'No game with code '+c+' nearby':'Enter the 4-letter code');return;
+  /* host controls */
+  case 'h-start':g.state='live';render();toastOthers(me,g.host+' started the game');return;
+  case 'h-cash':X.cashFor=d.v;X.camt=g.buyin;X.screen='cash';break;
+  case 'camt':X.camt=+d.v;break;
+  case 'cash-ok':buy(X.cashFor,X.camt,'cash');X.screen='table';render();toast(side,'Logged '+$(X.camt)+' cash for '+X.cashFor+'. Chips unlocked.');toastName(X.cashFor,me+' logged your '+$(X.camt)+' cash buy-in');return;
+  case 'h-end':g.state='ending';g.final={};X.screen='end';render();toastOthers(me,me+' ended the game. Wait for your turn to return chips.');var n1=nextReturner();if(n1&&n1.name!==me)toastName(n1.name,'Your turn: put your chips back in the tray');return;
+  case 'sim-return':var nx=nextReturner();X.reading=true;render();later(function(){X.reading=false;g.final[nx.name]=share(nx);render();toast(side,'Tray counted '+$(g.final[nx.name])+' from '+(nx.name===me?'you':nx.name));var n2=nextReturner();if(n2&&n2.name!==me)toastName(n2.name,'Your turn: put your chips back in the tray');},1400);return;
+  case 'payall':playing().forEach(function(p){var v=g.final[p.name]||0;p.out+=v;p.status='cashed';if(S.users[p.name]){S.users[p.name].bal+=v;S.users[p.name].log.unshift({t:g.name+' · payout',a:v,d:'Tonight, 11:48 PM'});}});
+    g.state='ended';X.screen='done';render();toast(side,'Everyone has been paid');['A','B'].forEach(function(s){var n=NAMES[s];if(n!==me&&pl(n))toast(s,'You got '+$(pl(n).out)+'. It’s in your wallet.');});return;
+  case 'finish':var net={};g.players.forEach(function(p){net[p.name]=p.out-tin(p)});S.history.unshift({name:g.name,date:'Nov 17',host:g.host,pot:bought(),players:g.players.length,hrs:3,net:net});S.game=null;
+    X.screen='history';X.tab='history';var os=S.ph[other(side)];if(['table','pay','out','join'].indexOf(os.screen)>=0)goHome(os);break;
+  /* buying in, anyone */
+  case 'buy-start':X.amt=g.buyin;X.stage='pick';X.screen='pay';break;
+  case 'amt':X.amt=+d.v;break;
+  case 'method':X.method=d.v;break;
+  case 'pay-open':X.stage='sheet';break;
+  case 'pay-cancel':X.stage='pick';break;
+  case 'pay-confirm':buy(me,X.amt,X.method);X.stage='done';render();if(!isHost(me))toastName(g.host,me+' paid '+$(X.amt)+'. Chips unlocked.');return;
+  /* cashing out, anyone who isn't hosting */
+  case 'early':X.outMode='early';X.outStage='place';X.screen='out';break;
+  case 'return':X.outMode='final';X.outStage='place';X.screen='out';break;
+  case 'place':X.outStage='reading';render();later(function(){if(X.screen==='out'){X.outStage='read';render();}},1600);return;
+  case 'cashout':var v=earlyValue(me),p=pl(me);p.out+=v;p.status='cashed';S.users[me].bal+=v;S.users[me].log.unshift({t:g.name+' · cashed out early',a:v,d:'Tonight, 10:52 PM'});X.screen='table';render();toast(side,$(v)+' is in your wallet');toastName(g.host,me+' cashed out early: '+$(v)+', counted by the tray');return;
+  case 'final-ok':g.final[me]=share(pl(me));X.screen='table';render();toastName(g.host,'Tray counted '+$(g.final[me])+' from '+me);var n3=nextReturner();if(n3&&sideOf(n3.name)&&n3.name!==g.host)toastName(n3.name,'Your turn: put your chips back in the tray');return;
+  /* wallet */
+  case 'wd':if(!S.users[me].verified){X.pendingWd=d.v;X.vstage='intro';X.screen='verify';break;}doWd(side,d.v);return;
+  case 'v-scan':X.vstage='scan';render();later(function(){if(X.screen==='verify'){X.vstage='ok';S.users[me].verified=true;render();}},1800);return;
+  case 'v-done':X.screen='wallet';X.tab='wallet';doWd(side,X.pendingWd||'card');return;
+  }
+  render();
+}
+function doWd(side,how){var me=NAMES[side],u=S.users[me];var amt=u.bal;u.log.unshift({t:how==='card'?'To '+CARDS[me].debit.replace(' •••• ',' ·'):'To bank account',a:-amt,d:'Just now'});u.bal=0;render();toast(side,how==='card'?'$'+amt.toFixed(2)+' is on its way to your debit card':'$'+amt.toFixed(2)+' will reach your bank in 1–3 days');}
+['A','B'].forEach(function(side){EL[side].addEventListener('click',function(e){var b=e.target.closest('button[data-act]');if(b)act(side,b.dataset.act,b.dataset);});
+  EL[side].addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='code'+side){e.preventDefault();act(side,'join-code',{});}});});
+
+/* ---------- walkthrough: Maya hosts, Jordan joins ---------- */
+function reset(){clearT();var sh=S.show;S=fresh();S.show=sh;}
+function ready(){['Maya','Jordan'].forEach(function(n){S.users[n].in=true;S.users[n].cards=true;});goHome(S.ph.A);goHome(S.ph.B);}
+function liveGame(){ready();S.sets.Maya=true;makeGame('Maya');join('Sam');join('Jordan');join('Priya');buy('Maya',40);buy('Sam',20);buy('Jordan',20);buy('Jordan',20);buy('Priya',40);buy('Priya',20);G().state='live';S.ph.A.screen='table';S.ph.B.screen='table';}
+function returned(n){var g=G();g.state='ending';g.final={};playing().slice(0,n).forEach(function(p){g.final[p.name]=share(p)});}
+var CH=[
+ {c:"Getting set up"},
+ {t:"Sign up",d:"Both phones run the same app. One tap with Apple.",show:"A",f:function(){}},
+ {t:"Add cards",d:"A debit card (no fees) and a credit card (card fee).",show:"B",f:function(){['Maya','Jordan'].forEach(function(n){S.users[n].in=true});S.ph.A.screen='card';S.ph.B.screen='card';}},
+ {t:"Host or join",d:"Every home screen has both choices. Either phone can host.",show:"A",f:function(){ready();}},
+ {c:"Game night: Maya hosts"},
+ {t:"Connect the set",d:"Maya pairs her set over Bluetooth. The tray checks all 100 chips.",show:"A",f:function(){ready();S.ph.A.screen='pair';S.ph.A.stage='found';}},
+ {t:"Open a game",d:"Name it, pick a buy-in, allow cash.",show:"A",f:function(){ready();S.sets.Maya=true;S.ph.A.draft={name:"Friday game",buyin:20,cash:true};S.ph.A.screen='new';}},
+ {t:"Join from nearby",d:"Jordan taps Join a game. His phone finds Maya’s set.",show:"B",f:function(){ready();S.sets.Maya=true;makeGame('Maya');join('Sam');S.ph.A.screen='table';S.ph.B.screen='join';}},
+ {t:"Buy in, then the chips unlock",d:"Debit is free, credit adds the fee. Face ID, then the tray opens and the chips unlock.",show:"B",f:function(){ready();S.sets.Maya=true;makeGame('Maya');join('Sam');join('Jordan');buy('Sam',20);S.ph.A.screen='table';S.ph.B.screen='pay';S.ph.B.amt=20;S.ph.B.stage='pick';}},
+ {t:"Play: one table, every phone",d:"Same pot and buy-ins everywhere. The host sees the tray live.",show:"A",f:function(){liveGame();}},
+ {t:"Cash buy-in",d:"Sam pays Maya in cash. She logs it and the chips unlock.",show:"A",f:function(){liveGame();S.ph.A.cashFor='Sam';S.ph.A.camt=20;S.ph.A.screen='cash';}},
+ {t:"Cash out early",d:"Jordan returns his chips. The tray counts them and pays him.",show:"B",f:function(){liveGame();S.ph.B.outMode='early';S.ph.B.outStage='place';S.ph.B.screen='out';}},
+ {c:"End of the night"},
+ {t:"End the game",d:"Players return chips one at a time. It’s Jordan’s turn.",show:"B",f:function(){liveGame();returned(2);S.ph.A.screen='end';}},
+ {t:"Everyone gets paid",d:"One tap pays every player from the pot.",show:"A",f:function(){liveGame();returned(4);act('A','payall',{});}},
+ {t:"Withdraw winnings",d:"A one-time ID check, then free to a debit card.",show:"B",f:function(){liveGame();returned(4);act('A','payall',{});S.ph.B.screen='wallet';S.ph.B.tab='wallet';}},
+ {t:"History and Pro stats",d:"Every game and result, plus your poker hourly rate with Pro.",show:"A",f:function(){liveGame();returned(4);act('A','payall',{});act('A','finish',{});S.ph.B.screen='history';S.ph.B.tab='history';}}
+];
+function anyScreen(n){return S.ph.A.screen===n||S.ph.B.screen===n}
+function derive(){var g=G();
+  if(anyScreen('history'))return 16;
+  if((anyScreen('wallet')||anyScreen('verify'))&&(!g||g.state==='ended'))return 15;
+  if(g&&g.state==='ended')return 14;
+  if(g&&g.state==='ending')return 13;
+  if(anyScreen('out'))return 11;
+  if(anyScreen('cash'))return 10;
+  if(anyScreen('pay'))return 8;
+  if(g&&g.state==='live')return 9;
+  if(g&&g.state==='lobby')return 7;
+  if(anyScreen('new'))return 6;
+  if(anyScreen('pair'))return 5;
+  if(anyScreen('card'))return 2;
+  if(S.ph.A.screen==='welcome'&&S.ph.B.screen==='welcome')return 1;
+  return 3;}
+var walk=document.getElementById('walk');
+function renderWalk(){var cur=derive(),n=0;walk.innerHTML=CH.map(function(w,i){if(w.c)return '<div class="chapter">'+w.c+'</div>';n++;return '<button type="button" class="'+(i===cur?'on':'')+'" data-w="'+i+'"><span class="n">'+(n<10?'0':'')+n+'</span><span><b>'+w.t+'</b><span class="d">'+w.d+'</span></span></button>';}).join('');}
+walk.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var w=CH[+b.dataset.w];reset();w.f();S.show=w.show;render();});
+document.getElementById('reset').addEventListener('click',function(){reset();render();});
+render();
+})();
+</script>
